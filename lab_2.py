@@ -2,6 +2,7 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float64MultiArray
+from visualization_msgs.msg import Marker
 import numpy as np
 
 class ForwardKinematics(Node):
@@ -19,6 +20,12 @@ class ForwardKinematics(Node):
             Float64MultiArray,
             'leg_front_r_end_effector_position',
             10)
+
+        self.marker_publisher = self.create_publisher(
+            Marker,
+            'marker',
+            10)
+
         timer_period = 0.5  # seconds (2 Hz)
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
@@ -30,6 +37,7 @@ class ForwardKinematics(Node):
         self.joint_positions = [msg.position[msg.name.index(joint)] for joint in joints_of_interest]
 
     def forward_kinematics(self, theta1, theta2, theta3):
+
         def rotation_x(angle):
             return np.array([
                 [1, 0, 0, 0],
@@ -90,9 +98,25 @@ class ForwardKinematics(Node):
 
             end_effector_position = self.forward_kinematics(theta1, theta2, theta3)
 
+            marker = Marker()
+            marker.header.frame_id = '/base_link'
+            marker.header.stamp = self.get_clock().now().to_msg()
+            marker.type = marker.SPHERE
+            marker.id = 0
+            marker.color.r = 0.0
+            marker.color.g = 1.0
+            marker.color.b = 0.0
+            marker.color.a = 1.0
+            marker.scale.x = 0.05
+            marker.scale.y = 0.05
+            marker.scale.z = 0.05
+            marker.pose.position.x = end_effector_position[0]
+            marker.pose.position.y = end_effector_position[1]
+            marker.pose.position.z = end_effector_position[2]
+            self.marker_publisher.publish(marker)
+
             position = Float64MultiArray()
             position.data = end_effector_position
-
             self.position_publisher.publish(position)
             # self.get_logger().info(f'theta1 = {theta1:.1f}, theta2 = {theta2:.1f}, theta3 = {theta3:.1f}')
             self.get_logger().info(f'End-Effector Position: x={end_effector_position[0]:.2f}, y={end_effector_position[1]:.2f}, z={end_effector_position[2]:.2f}')

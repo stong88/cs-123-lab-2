@@ -26,7 +26,7 @@ class ForwardKinematics(Node):
             'marker',
             10)
 
-        timer_period = 0.5  # seconds (2 Hz)
+        timer_period = 0.1  # seconds (2 Hz)
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
         self.joint_positions = None
